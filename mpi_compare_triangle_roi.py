@@ -331,64 +331,26 @@ if __name__ == "__main__":
 
     if sys.argv[3] == 'dir':
         folders = glob('*mT')
+        rad = int(sys.argv[4])
+        xor = int(sys.argv[5])
+        yor = int(sys.argv[6])
         print('Running Multiple Directories')
         for f in folders:
             print(f)
             time_start = time.time()
-            tt = Timestep_MPI(folder=f,step=step,model_file=model_file)
+            tt = Timestep_MPI(folder=f,step=step,rad=rad,xor=xor,yor=yor,model_file=model_file)
             print(Total_Time(time_start))
     else:
         folder = sys.argv[3]
         time_start = time.time()
-        tt = Timestep_MPI(folder=folder,step=step,model_file=model_file)
+        rad = int(sys.argv[4])
+        xor = int(sys.argv[5])
+        yor = int(sys.argv[6])
+        tt = Timestep_MPI(folder=folder,step=step,rad=rad,xor=xor,yor=yor,model_file=model_file)
+        
         print(Total_Time(time_start))
 
 
 
 
-#python C:/Users/jtavr/Desktop/Codes/mpi_compare_triangle.py 500 C:/Users/jtavr/Desktop/Fil_Training/Training_BG0.5/model_t0b1_stretch_03_triangle.keras dir
-
-"""
-if __name__ == "__main__":
-    time_range = None
-    thresh = 0
-    folder = './'
-    step = 500
-    model_file,label_file = ['C:/Users/jtavr/Desktop/Fil_Training/model_t0b0_stretch_04.keras', 'C:/Users/jtavr/Desktop/Fil_Training/labels_model_04.txt']
-    tt = Timestep_MPI(timesteps=time_range,thresh=thresh,folder=folder,step=step,model_file=model_file,label_file=label_file)
-
-"""
-
-"""
-m = 0
-31, 41, 49
-
-plt.figure()
-plt.imshow(ii)
-f_set = {31,41,49}
-for ci,com in enumerate(fil.fil_char.keys()):
-    if ci in f_set:
-        plt.text(*com,str(ci))
-plt.show()
-
-def output_mode_fft(imgData,c,com,scale=0.8):
-    radius = Fil.distance_cont(c,*com).max()
-    con_area = cv2.contourArea(c)
-    _,rad = cv2.minEnclosingCircle(c)
-    cir_area = np.pi*(rad**2)
-    area_dif = np.round(((cir_area-con_area)/cir_area),2)
-    if area_dif < .3:
-        mode_fft = 0
-        return mode_fft, None
-    c_cont_graph = circle_cont(scale*radius,*com,200)
-    c_cont_graph = c_cont_graph[:,c_cont_graph[0]<imgData.shape[1]]
-    c_cont_graph = c_cont_graph[:,c_cont_graph[1]<imgData.shape[0]]
-    inten = imgData.T[*c_cont_graph]
-    inten_shift = inten-inten.mean()
-    inten_shift = inten_shift/inten_shift.max()
-    mode_fft = abs(np.fft.rfft(inten_shift)).argmax()
-    if mode_fft >= 5:
-        print(f'mode {mode_fft} --> 0')
-        mode_fft = 0
-    return mode_fft, abs(np.fft.rfft(inten_shift))
-"""
+#python mpi_compare_triangle_roi.py 500 C:/Users/jtavr/Desktop/Fil_Training/Training_BG0.5/model_t0b1_stretch_03_triangle.keras . 450 856 733

@@ -25,7 +25,7 @@ import gc
 import heapq
 
 def Make_Fil(t):
-    fil = Fil(imdat=cv2.imread(f'{shared_folder}/{shared_dict[t]}.tif', cv2.IMREAD_UNCHANGED))
+    fil = Fil(imdat=cv2.imread(f'{shared_folder}/{shared_dict[t]}.tif', cv2.IMREAD_UNCHANGED),rad=shared_rad,xor=shared_xor,yor=shared_yor)
     #mode_fft = np.array([f[2] for f in fil.fil_char.values()])
     #modes,score = Fil.predict_image_fil_char(fil.fil_char,shared_model,shared_label)
     #array_fft_model_score = np.zeros((3,5))
@@ -49,21 +49,34 @@ def convert_time(time_str):
 
 # initialize worker processes
 #def init_worker(thresh,folder,dictionary,model,labels):
-def init_worker(folder,dictionary):
+def init_worker(rad,xor,yor,folder,dictionary):
     # declare scope of a new global variable
+
+    global shared_rad
+    global shared_xor
+    global shared_yor
+
     global shared_dict
     global shared_folder
     #global shared_model
     #global shared_label
 
     # store argument in the global variable for this process
+    shared_rad = rad
+    shared_xor = xor
+    shared_yor = yor
+
     shared_dict = dictionary
     shared_folder = folder
     #shared_model = model
     #shared_label = labels
 
 class Timestep_MPI():
-    def __init__(self,folder='',step=1,model_file=[],label_file=[]):
+    def __init__(self,folder='',step=1,rad=None,xor=None,yor=None,model_file=[],label_file=[]):
+
+        self.radius = rad
+        self.x_origin = xor
+        self.y_origin = yor
 
         self.folder = folder
         self.step = step
@@ -117,10 +130,7 @@ class Timestep_MPI():
             chunksize, extra = divmod(len(t_chunk),os.cpu_count()*4)
             if extra:
                 chunksize += 1
-            #with Pool(os.cpu_count()-1,initializer=init_worker, initargs=(self.thresh,self.folder,self.t2f,model,labels)) as pool:
-            #    all_fils_model = pool.imap_unordered(Make_Fil, t_chunk,chunksize=chunksize)
-            #with Pool(os.cpu_count()-1,initializer=init_worker, initargs=(self.thresh,self.folder,self.t2f,model,labels)) as pool:
-            with Pool(os.cpu_count()-1,initializer=init_worker, initargs=(self.folder,self.t2f)) as pool:
+            with Pool(os.cpu_count()-1,initializer=init_worker, initargs=(self.radius,self.x_origin,self.y_origin,self.folder,self.t2f)) as pool:
                 all_fils = pool.map(Make_Fil, t_chunk,chunksize=chunksize)
 
             pool.close()
@@ -179,10 +189,12 @@ class Timestep_MPI():
         print('MPI Total '+Total_Time(time_start_mpi))
     
 class Fil():
-    def __init__(self,imdat=None):
+    def __init__(self,imdat=None,rad=None,xor=None,yor=None):
         self.imgData = self.blur_median(imdat)
         self.thresh = None
-        
+        self.radius = rad
+        self.x_origin = xor
+        self.y_origin = yor
 
         self.fil_char = {}
         self.num_ref = {}
@@ -286,7 +298,7 @@ class Fil():
         else:
             _ , im_bw = cv2.threshold(img_8bit, self.thresh, 255, cv2.THRESH_BINARY)
         contours, _ =  cv2.findContours(im_bw.astype('uint8').copy(),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-        c_area_roi = [c for c in contours if np.all(np.array(self.imgData.T.shape)-1-c.max(axis=0)[0] > 0) and np.all(c.min(axis=0)[0] > 0) and cv2.contourArea(c) > 200]
+        c_area_roi = [c for c in contours if np.all(self.distance_cont(np.array(c),self.x_origin,self.y_origin) < self.radius) and cv2.contourArea(c) > 200]
 
         index=0
         for i,c in enumerate(c_area_roi):

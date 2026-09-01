@@ -294,7 +294,7 @@ class Fil():
     def getLoc(self):
         img_8bit = (self.imgData.copy()/self.imgData.max()*255).astype('uint8')
         if not self.thresh:
-            self.thresh , im_bw = cv2.threshold(img_8bit, None, 255, cv2.THRESH_BINARY + cv2.THRESH_TRIANGLE)
+            self.thresh , im_bw = cv2.threshold(img_8bit, None, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         else:
             _ , im_bw = cv2.threshold(img_8bit, self.thresh, 255, cv2.THRESH_BINARY)
         contours, _ =  cv2.findContours(im_bw.astype('uint8').copy(),cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
